@@ -35,18 +35,18 @@ def test_create_manuscript_property(seed, number_of_manuscripts):
 )
 def test_create_manuscript_expected_statistics(seed):
     """
-    Confirm that the mean of the manuscripts is 5 and the std is 2.88.
+    Confirm that the mean of the manuscripts is 5.5 and the std is 2.87.
 
     The std is calculated using known result for the variance of the uniform distribution:
 
-        (b - a) ^ 2 / 12
+        (b ^ 2 - 1) / 12
 
-    With b = 10 and a = 0.
+    With b = 10
     """
     manuscripts = main.create_manuscripts(number_of_manuscripts=500_000, seed=seed)
     assert min(manuscripts) >= MIN_MANUSCRIPT_SCORE
     assert max(manuscripts) <= MAX_MANUSCRIPT_SCORE
-    assert np.isclose(np.round(np.mean(manuscripts), 1), 5)
+    assert np.isclose(np.round(np.mean(manuscripts), 1), 5.5)
     assert np.isclose(np.round(np.std(manuscripts), 1), 2.9)
 
 
@@ -54,26 +54,26 @@ def test_create_manuscript_example():
     manuscripts = main.create_manuscripts(number_of_manuscripts=10, seed=0)
     expected_manuscripts = np.array(
         [
-            5.48813504,
-            7.15189366,
-            6.02763376,
-            5.44883183,
-            4.23654799,
-            6.45894113,
-            4.37587211,
-            8.91773001,
-            9.63662761,
-            3.83441519,
+            6,
+            1,
+            4,
+            4,
+            8,
+            10,
+            4,
+            6,
+            3,
+            5,
         ]
     )
-    np.allclose(manuscripts, expected_manuscripts)
+    assert np.array_equal(manuscripts, expected_manuscripts)
 
 
 @given(
     manuscripts=arrays(
-        np.float64,
+        int,
         DEFAULT_NUMBER_OF_MANUSCRIPTS,
-        elements=floats(min_value=0, max_value=10),
+        elements=integers(min_value=1, max_value=10),
     ),
     imprecision_error_sd=floats(min_value=0, max_value=2),
     other_error_sd=floats(min_value=0, max_value=2),
@@ -96,16 +96,16 @@ def test_review_manuscript_example():
     )
     expected_reviews = np.array(
         [
-            4.92190937,
-            8.04243507,
-            6.62426167,
-            5.32412808,
-            5.02591827,
-            6.26218688,
-            5.13435128,
-            8.76835491,
+            5.96139635,
+            0.90258907,
+            4.2670595,
+            3.0881615,
+            8.45820274,
             10.0,
-            3.77470701,
+            4.71388049,
+            6.22729218,
+            4.00894418,
+            4.38786077,
         ]
     )
     assert np.allclose(reviews, expected_reviews)
@@ -142,11 +142,11 @@ def test_review_manuscripts_expected_statistics(seed):
 
 @given(
     manuscripts=arrays(
-        np.float64,
+        int,
         DEFAULT_NUMBER_OF_MANUSCRIPTS,
-        elements=floats(min_value=0, max_value=10),
+        elements=integers(min_value=1, max_value=10),
     ),
-    threshold=integers(min_value=0, max_value=10),
+    threshold=integers(min_value=1, max_value=10),
 )
 def test_is_above_threshold_property(manuscripts, threshold):
     accept = main.is_above_threshold(manuscripts=manuscripts, threshold=threshold)
@@ -155,14 +155,14 @@ def test_is_above_threshold_property(manuscripts, threshold):
 
 @given(
     seed=integers(min_value=0, max_value=2**32 - 1),
-    number_of_reviews=integers(min_value=1, max_value=5),
+    number_of_reviews=integers(min_value=5, max_value=7),
     imprecision_error_sd=floats(min_value=0, max_value=1),
     other_error_sd=floats(min_value=0, max_value=1),
 )
 def test_get_average_review_property(
     seed, number_of_reviews, imprecision_error_sd, other_error_sd
 ):
-    manuscripts = main.create_manuscripts(number_of_manuscripts=500_000, seed=seed)
+    manuscripts = main.create_manuscripts(number_of_manuscripts=100_000, seed=seed)
     average_reviews = main.get_average_review_scores(
         manuscripts=manuscripts,
         number_of_reviews=number_of_reviews,
@@ -171,8 +171,7 @@ def test_get_average_review_property(
     )
     assert len(average_reviews) == len(manuscripts)
 
-    sampled_errors = manuscripts - average_reviews
-    assert np.isclose(np.round(np.mean(sampled_errors), 1), 0)
+    assert np.isclose(np.round(np.mean(average_reviews - manuscripts), 0), 0)
 
 
 @given(
@@ -180,7 +179,7 @@ def test_get_average_review_property(
     number_of_reviews=integers(min_value=1, max_value=5),
     imprecision_error_sd=floats(min_value=0, max_value=1),
     other_error_sd=floats(min_value=0, max_value=1),
-    threshold=integers(min_value=0, max_value=10),
+    threshold=integers(min_value=1, max_value=10),
 )
 def test_is_above_threshold_based_on_average(
     seed, number_of_reviews, imprecision_error_sd, other_error_sd, threshold
@@ -199,12 +198,25 @@ def test_is_above_threshold_based_on_average(
     assert set(accept) <= {True, False}
 
 
+def test_count_votes():
+    threshold = 7
+    reviews = (
+        np.array((1, 5, 8)),
+        np.array((8, 8, 8)),
+        np.array((10, 9, 1)),
+        np.array((10, 1, 2)),
+        np.array((9, 9, 5)),
+    )
+    number_of_votes = main.count_votes(reviews=reviews, threshold=threshold)
+    assert np.array_equal(number_of_votes, [4, 3, 2])
+
+
 @given(
     seed=integers(min_value=0, max_value=2**32 - 1),
     number_of_reviews=integers(min_value=1, max_value=5),
     imprecision_error_sd=floats(min_value=0, max_value=1),
     other_error_sd=floats(min_value=0, max_value=1),
-    threshold=integers(min_value=0, max_value=10),
+    threshold=integers(min_value=1, max_value=10),
 )
 def test_is_above_threshold_based_on_vote(
     seed, number_of_reviews, imprecision_error_sd, other_error_sd, threshold
@@ -228,7 +240,7 @@ def test_is_above_threshold_based_on_vote(
     number_of_reviews=integers(min_value=1, max_value=5),
     imprecision_error_sd=floats(min_value=0, max_value=1),
     other_error_sd=floats(min_value=0, max_value=1),
-    threshold=integers(min_value=0, max_value=10),
+    threshold=integers(min_value=1, max_value=10),
 )
 def test_accuracy_of_process(
     seed, number_of_reviews, imprecision_error_sd, other_error_sd, threshold

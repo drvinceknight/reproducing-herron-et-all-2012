@@ -2,7 +2,6 @@
 Source code to reproduce experiments of Herron 2012 paper.
 """
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def create_manuscripts(number_of_manuscripts, seed=None):
@@ -11,7 +10,7 @@ def create_manuscripts(number_of_manuscripts, seed=None):
     corresponds to a number uniformly sampled from 1 - 10.
     """
     np.random.seed(seed)
-    return 10 * np.random.random(size=number_of_manuscripts)
+    return np.random.randint(low=1, high=10 + 1, size=number_of_manuscripts)
 
 
 def review_manuscripts(manuscripts, imprecision_error_sd, other_error_sd):
@@ -43,6 +42,9 @@ def get_average_review_scores(
     imprecision_error_sd,
     other_error_sd,
 ):
+    """
+    Get average review scores over a number of reviewers.
+    """
     average_review_scores = np.mean(
         [
             review_manuscripts(
@@ -68,18 +70,24 @@ def is_above_threshold_based_on_average(
     Repeat the reviews and return booleans on
     wether or not to accept based on average score.
     """
-    average_review_scores = np.mean(
-        [
-            review_manuscripts(
-                manuscripts=manuscripts,
-                imprecision_error_sd=imprecision_error_sd,
-                other_error_sd=other_error_sd,
-            )
-            for _ in range(number_of_reviews)
-        ],
+    average_review_scores = get_average_review_scores(
+                                manuscripts=manuscripts,
+                                number_of_reviews=number_of_reviews,
+                                imprecision_error_sd=imprecision_error_sd,
+                                other_error_sd=other_error_sd,
+                                )
+    return average_review_scores >= threshold
+
+
+def count_votes(reviews, threshold):
+    """
+    Given an iterable of iterables of reviews returns the number of votes for each paper.
+    """
+    number_of_votes = np.sum(
+        [review >= threshold for review in reviews],
         axis=0,
     )
-    return average_review_scores >= threshold
+    return number_of_votes
 
 
 def is_above_threshold_based_on_vote(
@@ -93,19 +101,17 @@ def is_above_threshold_based_on_vote(
     Repeat the reviews and return booleans on
     wether or not to accept based on voting.
     """
-    number_of_votes = np.sum(
-        [
-            review_manuscripts(
-                manuscripts=manuscripts,
-                imprecision_error_sd=imprecision_error_sd,
-                other_error_sd=other_error_sd,
-            )
-            >= threshold
-            for _ in range(number_of_reviews)
-        ],
-        axis=0,
+    # TODO Modularise to separate votes
+    reviews = (
+        review_manuscripts(
+            manuscripts=manuscripts,
+            imprecision_error_sd=imprecision_error_sd,
+            other_error_sd=other_error_sd,
+        )
+        for _ in range(number_of_reviews)
     )
-    return number_of_votes >= number_of_reviews / 2
+    number_of_votes = count_votes(reviews=reviews, threshold=threshold)
+    return number_of_votes >= int(number_of_reviews / 2)
 
 
 def accuracy_of_process(
@@ -116,6 +122,9 @@ def accuracy_of_process(
     imprecision_error_sd,
     other_error_sd,
 ):
+    """
+    Return the accuracy of a given review process.
+    """
     accurate_decisions = is_above_threshold(
         manuscripts=manuscripts,
         threshold=threshold,
