@@ -1,0 +1,5 @@
+darglint==1.8.1
+flake8==4.0.1
+hypothesis==5.33.1
+numpy==1.21.2
+pytest==5.4.3
