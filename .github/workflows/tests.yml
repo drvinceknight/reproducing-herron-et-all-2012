@@ -41,7 +41,7 @@ jobs:
 
     - name: static analysis of source code
       run: |
-        python -m flake8 main.py
+        python -m flake8 --ignore=E501 main.py
 
     - name: test functionality of code
       run: |
