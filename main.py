@@ -71,11 +71,11 @@ def is_above_threshold_based_on_average(
     wether or not to accept based on average score.
     """
     average_review_scores = get_average_review_scores(
-                                manuscripts=manuscripts,
-                                number_of_reviews=number_of_reviews,
-                                imprecision_error_sd=imprecision_error_sd,
-                                other_error_sd=other_error_sd,
-                                )
+        manuscripts=manuscripts,
+        number_of_reviews=number_of_reviews,
+        imprecision_error_sd=imprecision_error_sd,
+        other_error_sd=other_error_sd,
+    )
     return average_review_scores >= threshold
 
 
