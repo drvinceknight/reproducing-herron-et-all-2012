@@ -97,7 +97,7 @@ def test_review_manuscript_example():
     expected_reviews = np.array(
         [
             5.96139635,
-            0.90258907,
+            1,
             4.2670595,
             3.0881615,
             8.45820274,
