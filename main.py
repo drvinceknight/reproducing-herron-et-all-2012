@@ -45,7 +45,7 @@ def review_manuscripts(manuscripts, imprecision_error_sd, other_error_sd):
         scale=imprecision_error_sd, size=number_of_manuscripts
     )
     other_error = np.random.normal(scale=other_error_sd, size=number_of_manuscripts)
-    return np.clip(a=manuscripts + imprecision_error + other_error, a_min=0, a_max=10)
+    return np.clip(a=manuscripts + imprecision_error + other_error, a_min=1, a_max=10)
 
 
 def is_above_threshold(
